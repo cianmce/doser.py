@@ -12,8 +12,8 @@ printedMsgs = []
 
 def printMsg(msg):
   if msg not in printedMsgs:
-    print ("\n"+msg + " after %i requests" % request_counter)
-    printedMsgs.append(msg)
+    print "\n"+msg + " after %i requests" % request_counter
+  printedMsgs.append(msg)
 
 def useragent_list():
   global headers_useragents
@@ -55,14 +55,17 @@ def initHeaders():
       headers.update({header.split(":")[0]:header.split(":")[1]})
   return headers
 
-def handleStatusCodes(status_code):
+def handleStatusCodes(status_code, text):
   global request_counter
-  sys.stdout.write("\r%i requests has been sent" % request_counter)
-  sys.stdout.flush()
+        if request_counter % 200 == 0:
+          # sys.stdout.write("\r%i requests has been sent" % request_counter)
+          print("\r%i requests has been sent" % request_counter)
+          # sys.stdout.flush()
   if status_code == 429:
       printMsg("You have been throttled")
-  if status_code == 500:
-    printMsg("Status code 500 received")
+  if status_code >= 500:
+    print("Status: {}, text: {}".format(status_code, text))
+    # printedMsg("Status code 500 received")
 
 def sendGET(url):
   global request_counter
@@ -71,7 +74,7 @@ def sendGET(url):
     request_counter+=1
     request = requests.get(url, headers=headers)
     # print 'her'
-    handleStatusCodes(request.status_code)
+    handleStatusCodes(request.status_code, request.text)
   except:
     pass
 
